@@ -4,7 +4,7 @@ import "./globals.css";
 import Providers from "./providers";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import CustomCursor from "@/components/CustomCursor";
-import ScrollProgress from "@/components/ScrollProgress";
+
 import Loader from "@/components/Loader";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import BackToTop from "@/components/BackToTop";
@@ -94,7 +94,6 @@ export default function RootLayout({
         <Providers>
           <SmoothScrollProvider />
           <CustomCursor />
-          <ScrollProgress />
           <Loader />
           <GlobalNavbar />
           {children}
