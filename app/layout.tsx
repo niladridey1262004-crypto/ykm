@@ -6,7 +6,7 @@ import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import CustomCursor from "@/components/CustomCursor";
 import ScrollProgress from "@/components/ScrollProgress";
 import Loader from "@/components/Loader";
-import Navbar from "@/components/Navbar";
+import GlobalNavbar from "@/components/GlobalNavbar";
 import BackToTop from "@/components/BackToTop";
 import Toast from "@/components/Toast";
 import CartDrawer from "@/components/shop/CartDrawer";
@@ -96,7 +96,7 @@ export default function RootLayout({
           <CustomCursor />
           <ScrollProgress />
           <Loader />
-          <Navbar />
+          <GlobalNavbar />
           {children}
           <BackToTop />
           <Toast />

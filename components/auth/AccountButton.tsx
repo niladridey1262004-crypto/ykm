@@ -20,9 +20,9 @@ export default function AccountButton() {
         type="button"
         onClick={() => (user ? setDrawerOpen(true) : openLogin())}
         aria-label={user ? "My account" : "Sign in"}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-white transition-colors hover:border-accent hover:text-accent"
+        className="flex h-[34px] w-[34px] sm:h-9 sm:w-9 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition-all duration-200 hover:border-accent hover:text-accent hover:bg-white/5 active:scale-95 shrink-0"
       >
-        <User size={16} />
+        <User size={15} />
       </button>
       <AccountDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>

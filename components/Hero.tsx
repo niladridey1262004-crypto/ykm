@@ -1,30 +1,53 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Navbar from "@/components/Navbar";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden px-6 pb-16 pt-40 md:px-8 md:pt-48">
-      <div
-        className="pointer-events-none absolute -bottom-20 -right-20 h-[380px] w-[380px] animate-orbFloat rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,61,0,.16) 0%, transparent 70%)",
-        }}
-        aria-hidden="true"
-      />
-      <h1 className="relative z-[1] font-display text-[clamp(72px,18vw,200px)] leading-[0.9] tracking-[-0.01em]">
-        <span className="block overflow-hidden">
-          <motion.span
-            className="block"
-            initial={{ y: "110%" }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.9 }}
-          >
-            YOU KNOW ME
-          </motion.span>
-        </span>
-      </h1>
+    <section className="relative w-full overflow-visible">
+      {/* 1. Giant YOU KNOW ME Title across the very top of the page */}
+      <div className="w-full px-3 pt-3 pb-2 sm:px-6 sm:pt-5 md:px-8 md:pt-6 md:pb-3">
+        <h1 className="w-full font-display text-[clamp(4.2rem,17.2vw,16.5rem)] leading-[0.82] tracking-[-0.02em] text-white uppercase select-none">
+          <span className="block overflow-hidden">
+            <motion.span
+              className="block"
+              initial={{ y: "110%" }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            >
+              YOU KNOW ME
+            </motion.span>
+          </span>
+        </h1>
+      </div>
+
+      {/* 2. Navbar at the exact bottom of the name YOU KNOW ME, sticky on scroll */}
+      <Navbar />
+
+      {/* 3. Hero Bio Section (Niladri quote on the right + centered red accent divider, matching 2nd image) */}
+      <div className="mx-auto w-full max-w-[1320px] px-6 pt-16 pb-14 md:px-8 md:pt-28 md:pb-20">
+        <motion.p
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "0px 0px -30px 0px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="ml-auto max-w-[500px] text-left text-[14px] leading-[1.8] text-[#ccc] md:text-[15px]"
+        >
+          &ldquo;I&apos;m Niladri Day, a passionate tech creator building
+          innovative electronics, custom 3D prototypes, and futuristic
+          engineering projects. I share creative ideas, experiments, and
+          technology-driven solutions through thoughtful design and hands-on
+          innovation.&rdquo;
+        </motion.p>
+        <motion.div
+          initial={{ width: 0 }}
+          whileInView={{ width: 36 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+          className="mx-auto mt-12 md:mt-16 h-[3px] bg-accent"
+        />
+      </div>
     </section>
   );
 }
