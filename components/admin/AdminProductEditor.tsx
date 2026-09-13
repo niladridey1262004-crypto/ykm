@@ -258,7 +258,11 @@ export default function AdminProductEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[3000] overflow-y-auto bg-black/80 backdrop-blur-sm"
+      data-lenis-prevent
+    >
+      <div className="flex min-h-full items-center justify-center px-4 py-8">
       <div
         role="dialog"
         aria-modal="true"
@@ -267,7 +271,7 @@ export default function AdminProductEditor({
             ? "Add new product"
             : `Edit ${product.name}`
         }
-        className="relative max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-2xl border border-[#222] bg-[#111] p-6"
+        className="relative w-full max-w-[560px] rounded-2xl border border-[#222] bg-[#111] p-6"
       >
         <button
           type="button"
@@ -575,6 +579,7 @@ export default function AdminProductEditor({
                 : "Save Changes"}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
