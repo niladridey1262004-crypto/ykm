@@ -7,8 +7,8 @@ export default function Hero() {
   return (
     <section className="relative w-full overflow-visible">
       {/* 1. Giant YOU KNOW ME Title across the very top of the page */}
-      <div className="w-full px-3 pt-3 pb-2 sm:px-6 sm:pt-5 md:px-8 md:pt-6 md:pb-3">
-        <h1 className="w-full font-display text-[clamp(4.2rem,17.2vw,16.5rem)] leading-[0.82] tracking-[-0.02em] text-white uppercase select-none">
+      <div className="w-full pt-3 pb-2 sm:pt-5 md:pt-6 md:pb-3">
+        <h1 className="w-full text-center font-display text-[clamp(4.2rem,17.2vw,16.5rem)] leading-[0.82] tracking-[-0.02em] text-white uppercase select-none">
           <span className="block overflow-hidden">
             <motion.span
               className="block"
