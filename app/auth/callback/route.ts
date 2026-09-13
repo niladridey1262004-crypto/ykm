@@ -10,16 +10,24 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
+  // Use the forwarded host when behind reverse proxies (like Vercel production)
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocal = process.env.NODE_ENV === "development";
+  const redirectOrigin = !isLocal && forwardedHost ? `https://${forwardedHost}` : origin;
+
+  // Sanitize next to prevent open redirects
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${redirectOrigin}${safeNext}`);
     }
 
     console.error("Auth callback failed:", error.message);
   }
 
-  return NextResponse.redirect(`${origin}/?auth_error=1`);
+  return NextResponse.redirect(`${redirectOrigin}/?auth_error=1`);
 }

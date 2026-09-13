@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mail, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ShieldCheck, Sparkles, X } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 function GoogleIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" className="shrink-0">
       <path
         fill="#FFC107"
         d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"
@@ -26,155 +27,58 @@ function GoogleIcon() {
     </svg>
   );
 }
-import { useAuth } from "@/context/AuthContext";
-
-type AuthMode = "password" | "magic_link" | "email_otp";
 
 export default function LoginModal() {
-  const {
-    isLoginOpen,
-    closeLogin,
-    loginWithPassword,
-    signUpWithPassword,
-    sendMagicLink,
-    signInWithGoogle,
-    sendEmailOtp,
-    verifyEmailOtp,
-  } = useAuth();
-
-  const [mode, setMode] = useState<AuthMode>("password");
-  const [isSignUp, setIsSignUp] = useState(false);
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-
-  const [otpSent, setOtpSent] = useState(false);
-  const [message, setMessage] = useState("");
+  const { isLoginOpen, closeLogin, signInWithGoogle } = useAuth();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check URL query parameters for auth error redirected back from callback
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("auth_error")) {
+        setError("Google authentication was cancelled or could not be completed. Please try again.");
+      }
+    }
+  }, [isLoginOpen]);
+
+  // Handle ESC key to dismiss
+  useEffect(() => {
+    if (!isLoginOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLogin();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isLoginOpen, closeLogin]);
+
   if (!isLoginOpen) return null;
-
-  const resetMessages = () => {
-    setError("");
-    setMessage("");
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    resetMessages();
-
-    const result = isSignUp
-      ? await signUpWithPassword(email.trim(), password)
-      : await loginWithPassword(email.trim(), password);
-
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setError(result.error ?? "Authentication failed.");
-      return;
-    }
-
-    if (isSignUp) {
-      setMessage(
-        "Account created. Please check your email if email confirmation is required."
-      );
-    }
-  };
-
-  const handleMagicLink = async () => {
-    if (!email.trim()) {
-      setError("Please enter your email address.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    resetMessages();
-
-    const result = await sendMagicLink(email.trim());
-
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setError(result.error ?? "Unable to send magic link.");
-      return;
-    }
-
-    setMessage("Magic link sent. Check your email to continue.");
-  };
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
-    resetMessages();
+    setError("");
 
     const result = await signInWithGoogle();
 
     if (!result.success) {
       setIsSubmitting(false);
-      setError(result.error ?? "Unable to sign in with Google.");
+      const rawError = result.error ?? "Unable to connect to Google.";
+      if (rawError.toLowerCase().includes("provider is not enabled")) {
+        setError(
+          "Google Auth is not enabled in your Supabase project yet. Please enable the Google provider in Supabase Dashboard -> Authentication -> Providers."
+        );
+      } else {
+        setError(rawError);
+      }
     }
-    // On success the browser navigates away to Google, so we
-    // deliberately leave isSubmitting on — there's no more UI to
-    // update on this page before the redirect happens.
-  };
-
-  const handleSendOtp = async () => {
-    if (!email.trim()) {
-      setError("Please enter your email address.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    resetMessages();
-
-    const result = await sendEmailOtp(email.trim());
-
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setError(result.error ?? "Unable to send OTP.");
-      return;
-    }
-
-    setOtpSent(true);
-    setMessage("OTP sent. Check your email.");
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otp.trim()) {
-      setError("Please enter the OTP.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    resetMessages();
-
-    const result = await verifyEmailOtp(email.trim(), otp.trim());
-
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setError(result.error ?? "Invalid or expired OTP.");
-    }
-  };
-
-  const changeMode = (newMode: AuthMode) => {
-    setMode(newMode);
-    setOtpSent(false);
-    setOtp("");
-    resetMessages();
+    // On success, Supabase redirects the browser to Google consent screen
   };
 
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm"
+        className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 px-4 backdrop-blur-md"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -183,233 +87,107 @@ export default function LoginModal() {
         }}
       >
         <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.96 }}
+          initial={{ opacity: 0, y: 20, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 24, scale: 0.96 }}
+          exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{
-            duration: 0.3,
+            duration: 0.28,
             ease: [0.22, 1, 0.36, 1],
           }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="login-title"
-          className="relative w-full max-w-[420px] rounded-2xl border border-[#222] bg-[#111] p-6"
+          className="relative w-full max-w-[420px] overflow-hidden rounded-2xl border border-[#262626] bg-[#111] p-6 sm:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
         >
+          {/* Subtle accent glow in background */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-accent/15 blur-[60px]"
+          />
+
+          {/* Close button */}
           <button
             type="button"
             onClick={closeLogin}
-            aria-label="Close login"
-            className="absolute right-4 top-4 text-muted transition-colors hover:text-white"
+            aria-label="Close dialog"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-[#888] transition-colors hover:bg-white/5 hover:text-white"
           >
             <X size={18} />
           </button>
 
-          <h2
-            id="login-title"
-            className="mb-1.5 font-display text-2xl tracking-[0.03em]"
-          >
-            {isSignUp ? "Create account" : "Sign in"}
-          </h2>
+          {/* Header */}
+          <div className="relative mb-5">
+            <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-accent">
+              <Sparkles size={11} />
+              <span>Sign In &amp; Sign Up</span>
+            </div>
 
-          <p className="mb-5 text-xs leading-[1.6] text-muted">
-            Use your email to access your account and manage your orders.
-          </p>
+            <h2
+              id="login-title"
+              className="mb-1.5 font-display text-2xl tracking-[0.02em] text-white"
+            >
+              Welcome to YOU KNOW ME
+            </h2>
 
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isSubmitting}
-            className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-[10px] border border-[#333] bg-white py-3 text-sm font-semibold text-black transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <GoogleIcon />
-            {isSubmitting ? "Redirecting..." : "Continue with Google"}
-          </button>
-
-          <div className="mb-4 flex items-center gap-3 text-[10px] uppercase tracking-[0.08em] text-[#555]">
-            <span className="h-px flex-1 bg-[#2a2a2a]" />
-            or
-            <span className="h-px flex-1 bg-[#2a2a2a]" />
+            <p className="text-xs leading-[1.6] text-[#999]">
+              Sign in or create your account in one click with Google to track orders, save items, and speed up checkout.
+            </p>
           </div>
 
-          <div className="mb-4 grid grid-cols-3 gap-1 rounded-lg bg-[#1a1a1a] p-1">
+          {/* Google Sign-In Button */}
+          <div className="relative mb-5">
             <button
               type="button"
-              onClick={() => changeMode("password")}
-              className={`rounded-md py-2 text-[11px] font-semibold ${
-                mode === "password"
-                  ? "bg-accent text-black"
-                  : "text-muted hover:text-white"
-              }`}
+              onClick={handleGoogleSignIn}
+              disabled={isSubmitting}
+              className="group relative flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white py-3.5 px-4 text-sm font-semibold text-[#111] shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#f3f3f3] hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Password
-            </button>
-
-            <button
-              type="button"
-              onClick={() => changeMode("magic_link")}
-              className={`rounded-md py-2 text-[11px] font-semibold ${
-                mode === "magic_link"
-                  ? "bg-accent text-black"
-                  : "text-muted hover:text-white"
-              }`}
-            >
-              Magic Link
-            </button>
-
-            <button
-              type="button"
-              onClick={() => changeMode("email_otp")}
-              className={`rounded-md py-2 text-[11px] font-semibold ${
-                mode === "email_otp"
-                  ? "bg-accent text-black"
-                  : "text-muted hover:text-white"
-              }`}
-            >
-              Email OTP
+              {isSubmitting ? (
+                <div className="flex items-center gap-2 text-sm text-[#444]">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#888] border-t-accent" />
+                  <span>Redirecting to Google...</span>
+                </div>
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <span className="tracking-[0.01em]">Continue with Google</span>
+                </>
+              )}
             </button>
           </div>
 
-          <label
-            htmlFor="authEmail"
-            className="mb-1 block text-[11px] uppercase tracking-[0.04em] text-[#888]"
-          >
-            Email address
-          </label>
-
-          <div className="relative">
-            <Mail
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]"
-            />
-
-            <input
-              id="authEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-md border border-[#333] bg-[#0d0d0d] py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-[#555] focus:border-accent focus:outline-none"
-              autoFocus
-            />
+          {/* Trust Highlights */}
+          <div className="relative mb-5 space-y-2 rounded-xl border border-[#1f1f1f] bg-[#161616]/70 p-3.5 text-left text-xs text-[#aaa]">
+            <div className="flex items-start gap-2.5">
+              <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-accent" />
+              <span>
+                <strong className="font-semibold text-white">Instant 1-Click Access:</strong> Existing users sign in; new users are automatically registered.
+              </span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-accent" />
+              <span>
+                <strong className="font-semibold text-white">No Passwords:</strong> Safe and protected via official Google OAuth encryption.
+              </span>
+            </div>
           </div>
 
-          {mode === "password" && (
-            <>
-              <label
-                htmlFor="authPassword"
-                className="mb-1 mt-4 block text-[11px] uppercase tracking-[0.04em] text-[#888]"
-              >
-                Password
-              </label>
-
-              <input
-                id="authPassword"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full rounded-md border border-[#333] bg-[#0d0d0d] px-3 py-2.5 text-sm text-white placeholder:text-[#555] focus:border-accent focus:outline-none"
-              />
-            </>
-          )}
-
-          {mode === "email_otp" && otpSent && (
-            <>
-              <label
-                htmlFor="authOtp"
-                className="mb-1 mt-4 block text-[11px] uppercase tracking-[0.04em] text-[#888]"
-              >
-                Verification code
-              </label>
-
-              <input
-                id="authOtp"
-                type="text"
-                inputMode="numeric"
-                value={otp}
-                onChange={(e) =>
-                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                }
-                placeholder="Enter your OTP"
-                className="w-full rounded-md border border-[#333] bg-[#0d0d0d] px-3 py-2.5 text-sm tracking-[0.2em] text-white placeholder:text-[#555] focus:border-accent focus:outline-none"
-              />
-            </>
-          )}
-
+          {/* Error Banner */}
           {error && (
-            <div className="mt-3 text-[11px] text-[#ff5555]">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="mt-3 text-[11px] text-accent">
-              {message}
-            </div>
-          )}
-
-          {mode === "password" && (
-            <button
-              type="button"
-              onClick={handlePasswordSubmit}
-              disabled={isSubmitting}
-              className="mt-5 w-full rounded-[10px] bg-accent py-3 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs leading-[1.5] text-red-300"
             >
-              {isSubmitting
-                ? "Please wait..."
-                : isSignUp
-                  ? "Create Account"
-                  : "Sign In"}
-            </button>
+              <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />
+              <div>{error}</div>
+            </motion.div>
           )}
 
-          {mode === "magic_link" && (
-            <button
-              type="button"
-              onClick={handleMagicLink}
-              disabled={isSubmitting}
-              className="mt-5 w-full rounded-[10px] bg-accent py-3 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSubmitting ? "Sending..." : "Send Magic Link"}
-            </button>
-          )}
-
-          {mode === "email_otp" && !otpSent && (
-            <button
-              type="button"
-              onClick={handleSendOtp}
-              disabled={isSubmitting}
-              className="mt-5 w-full rounded-[10px] bg-accent py-3 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSubmitting ? "Sending..." : "Send OTP"}
-            </button>
-          )}
-
-          {mode === "email_otp" && otpSent && (
-            <button
-              type="button"
-              onClick={handleVerifyOtp}
-              disabled={isSubmitting}
-              className="mt-5 w-full rounded-[10px] bg-accent py-3 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSubmitting ? "Verifying..." : "Verify OTP"}
-            </button>
-          )}
-
-          {mode === "password" && (
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp((current) => !current);
-                resetMessages();
-              }}
-              className="mt-4 w-full text-center text-xs text-muted hover:text-white"
-            >
-              {isSignUp
-                ? "Already have an account? Sign in"
-                : "New here? Create an account"}
-            </button>
-          )}
+          {/* Footer note */}
+          <p className="relative text-center text-[11px] leading-[1.5] text-[#666]">
+            By continuing, you agree to YOU KNOW ME Terms of Service &amp; Privacy Policy.
+          </p>
         </motion.div>
       </motion.div>
     </AnimatePresence>

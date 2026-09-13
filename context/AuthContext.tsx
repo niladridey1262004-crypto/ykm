@@ -31,7 +31,9 @@ interface AuthContextValue {
     email: string
   ) => Promise<{ success: boolean; error?: string }>;
 
-  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: (
+    returnTo?: string
+  ) => Promise<{ success: boolean; error?: string }>;
 
   sendEmailOtp: (
     email: string
@@ -211,14 +213,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true };
   };
 
-  const signInWithGoogle = async (): Promise<{
+  const signInWithGoogle = async (returnTo?: string): Promise<{
     success: boolean;
     error?: string;
   }> => {
+    const currentPath =
+      typeof window !== "undefined"
+        ? window.location.pathname + window.location.search
+        : "/";
+    const targetPath = returnTo || currentPath;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(targetPath)}`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo,
+        queryParams: {
+          access_type: "offline",
+          prompt: "select_account",
+        },
       },
     });
 
